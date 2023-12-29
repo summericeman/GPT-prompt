@@ -1,0 +1,95 @@
+Function readSetting() As Object
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("setting")
+
+    Dim settingDict As Object
+    Set settingDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Integer
+    i = 1
+
+    While Not IsEmpty(ws.Cells(i, 1)) And Not IsEmpty(ws.Cells(i, 2))
+        settingDict(ws.Cells(i, 1).Value) = ws.Cells(i, 2).Value
+        i = i + 1
+    Wend
+
+    ' 返回 settingDict
+    Set readSetting = settingDict
+End Function
+
+Function explainDict() As Object
+    Dim settingDict As Object
+    Set settingDict = readSetting()
+    
+    ' 创建新的字典来存储转换后的设置值
+    Dim settingValueDict As Object
+    Set settingValueDict = CreateObject("Scripting.Dictionary")
+    
+    Dim key As Variant
+    For Each key In settingDict.Keys
+        ' 检查是否是 lastColumn，如果是，尝试进行转换
+        If key = "lastColumn" Then
+            ' 尝试将列引用转换为数字
+            Dim colLetter As String
+            colLetter = settingDict(key)
+            If Not IsEmpty(colLetter) And IsNumeric(Cells(1, colLetter).Column) Then
+                settingValueDict(key) = Cells(1, colLetter).Column
+            Else
+                settingValueDict(key) = settingDict(key)
+            End If
+        Else
+            ' 其他键直接复制
+            settingValueDict(key) = settingDict(key)
+        End If
+    Next key
+    
+    ' 返回新的字典对象
+    Set explainDict = settingValueDict
+    
+
+End Function
+
+Sub PrintExplainDict()
+    Dim newSettingValueDict As Object
+    Set newSettingValueDict = explainDict()
+
+    ' 打印转换后的字典内容
+    Dim key As Variant
+    For Each key In newSettingValueDict.Keys
+        Debug.Print "Key: " & key & "; Value: " & newSettingValueDict(key)
+    Next key
+End Sub
+
+
+
+Sub getSelection()
+    Dim SelectionRange As Range
+    Set SelectionRange = Selection
+    Dim i As Integer, j As Integer
+    Dim cellValue As String
+    Dim lastColumn As Variant
+    Dim settingDict As Object
+    Set settingDict = explainDict()
+
+    ' 获取 lastColumn 的值
+    If settingDict.Exists("lastColumn") Then
+        lastColumn = settingDict("lastColumn")
+    Else
+        MsgBox "未找到 lastColumn 设置", vbExclamation, "设置错误"
+        Exit Sub
+    End If
+
+    ' 如果 lastColumn 是字母，转换为对应的数字
+    If Not IsNumeric(lastColumn) Then
+        lastColumn = Columns(lastColumn).Column
+    End If
+
+    ' 输出选定范围内指定列的数据
+    For Each row In SelectionRange.Rows
+        cellValue = ""
+        For j = 1 To lastColumn
+            cellValue = cellValue & row.Cells(1, j).Value & " "
+        Next j
+        Debug.Print "行 " & row.row & ": " & cellValue
+    Next row
+End Sub
