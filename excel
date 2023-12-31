@@ -61,19 +61,18 @@ Sub PrintExplainDict()
 End Sub
 
 
-
 Sub getSelection()
     Dim SelectionRange As Range
     Set SelectionRange = Selection
     Dim i As Integer, j As Integer
     Dim cellValue As String
     Dim lastColumn As Variant
-    Dim settingDict As Object
-    Set settingDict = explainDict()
+    Dim settingValueDict As Object
+    Set settingValueDict = explainDict()
 
     ' 获取 lastColumn 的值
-    If settingDict.Exists("lastColumn") Then
-        lastColumn = settingDict("lastColumn")
+    If settingValueDict.Exists("lastColumn") Then
+        lastColumn = settingValueDict("lastColumn")
     Else
         MsgBox "未找到 lastColumn 设置", vbExclamation, "设置错误"
         Exit Sub
@@ -84,12 +83,69 @@ Sub getSelection()
         lastColumn = Columns(lastColumn).Column
     End If
 
-    ' 输出选定范围内指定列的数据
+    ' 定义数组来存储选定范围的信息
+    Dim selectionInfoArr() As String
+    ReDim selectionInfoArr(1 To SelectionRange.Rows.Count)
+
+    ' 输出选定范围内指定列的数据并保存到数组
+    i = 1
     For Each row In SelectionRange.Rows
         cellValue = ""
         For j = 1 To lastColumn
             cellValue = cellValue & row.Cells(1, j).Value & " "
         Next j
-        Debug.Print "行 " & row.row & ": " & cellValue
+        selectionInfoArr(i) = cellValue
+        i = i + 1
     Next row
+
+    ' 打印 selectionInfoArr 的数据
+    For i = 1 To UBound(selectionInfoArr)
+        Debug.Print selectionInfoArr(i)
+    Next i
+End Sub
+
+Sub getTitle()
+    ' 初始化 settingValueDict 为调用 explainDict 函数的返回值
+    Dim settingValueDict As Object
+    Set settingValueDict = explainDict()
+
+    ' 检查 settingValueDict 是否包含 lastColumn 键
+    Dim lastColumn As Variant
+    If settingValueDict.Exists("lastColumn") Then
+        lastColumn = settingValueDict("lastColumn")
+        ' 检查 lastColumn 是否为字母
+        If Not IsNumeric(lastColumn) Then
+            lastColumn = Columns(lastColumn).Column
+        End If
+    Else
+        MsgBox "未找到 lastColumn 设置", vbExclamation, "设置错误"
+        Exit Sub
+    End If
+
+    ' 检查 settingValueDict 是否包含 titleLineNumber 键
+    Dim titleLineNumber As Variant
+    If settingValueDict.Exists("titleLineNumber") Then
+        titleLineNumber = settingValueDict("titleLineNumber")
+    Else
+        MsgBox "未找到 titleLineNumber 设置", vbExclamation, "设置错误"
+        Exit Sub
+    End If
+
+    ' 定义 titleInfoArr 数组以存储标题行的数据
+    Dim titleInfoArr() As Variant
+    ReDim titleInfoArr(1 To lastColumn)
+
+    ' 从当前活动工作表里获取第 titleLineNumber 行，1 到 lastColumn 列的数据
+    Dim i As Integer
+    For i = 1 To lastColumn
+        titleInfoArr(i) = ActiveSheet.Cells(titleLineNumber, i).Value
+    Next i
+
+    ' 打印 titleInfoArr 的内容，将所有列的值连接成一个字符串
+    Dim titleStr As String
+    titleStr = ""
+    For i = 1 To UBound(titleInfoArr)
+        titleStr = titleStr & titleInfoArr(i) & " "
+    Next i
+    Debug.Print titleStr
 End Sub
