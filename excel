@@ -60,8 +60,7 @@ Sub PrintExplainDict()
     Next key
 End Sub
 
-
-Sub getSelection()
+Function getSelection() As Variant
     Dim SelectionRange As Range
     Set SelectionRange = Selection
     Dim i As Integer, j As Integer
@@ -75,7 +74,7 @@ Sub getSelection()
         lastColumn = settingValueDict("lastColumn")
     Else
         MsgBox "未找到 lastColumn 设置", vbExclamation, "设置错误"
-        Exit Sub
+        Exit Function
     End If
 
     ' 如果 lastColumn 是字母，转换为对应的数字
@@ -98,13 +97,11 @@ Sub getSelection()
         i = i + 1
     Next row
 
-    ' 打印 selectionInfoArr 的数据
-    For i = 1 To UBound(selectionInfoArr)
-        Debug.Print selectionInfoArr(i)
-    Next i
-End Sub
+    getSelection = selectionInfoArr
+End Function
 
-Sub getTitle()
+
+Function getTitle() As Variant()
     ' 初始化 settingValueDict 为调用 explainDict 函数的返回值
     Dim settingValueDict As Object
     Set settingValueDict = explainDict()
@@ -119,7 +116,7 @@ Sub getTitle()
         End If
     Else
         MsgBox "未找到 lastColumn 设置", vbExclamation, "设置错误"
-        Exit Sub
+        Exit Function
     End If
 
     ' 检查 settingValueDict 是否包含 titleLineNumber 键
@@ -128,7 +125,7 @@ Sub getTitle()
         titleLineNumber = settingValueDict("titleLineNumber")
     Else
         MsgBox "未找到 titleLineNumber 设置", vbExclamation, "设置错误"
-        Exit Sub
+        Exit Function
     End If
 
     ' 定义 titleInfoArr 数组以存储标题行的数据
@@ -141,11 +138,38 @@ Sub getTitle()
         titleInfoArr(i) = ActiveSheet.Cells(titleLineNumber, i).Value
     Next i
 
-    ' 打印 titleInfoArr 的内容，将所有列的值连接成一个字符串
-    Dim titleStr As String
-    titleStr = ""
-    For i = 1 To UBound(titleInfoArr)
-        titleStr = titleStr & titleInfoArr(i) & " "
+    getTitle = titleInfoArr
+End Function
+
+Sub getSelectionInfo()
+    ' 检查是否选择了整行
+    If Not Selection.EntireRow.Address = Selection.Address Then
+        MsgBox "没有选择整行，请选择整行后重试。", vbExclamation, "选择错误"
+        Exit Sub
+    End If
+
+    ' 调用 getTitle 获取标题行
+    Dim titleInfoArr As Variant
+    titleInfoArr = getTitle()
+
+    ' 调用 getSelection 获取选定行
+    Dim selectionInfoArr As Variant
+    selectionInfoArr = getSelection()
+
+    ' 将标题行作为首行加入到 infoArr
+    Dim infoArr() As Variant
+    ReDim infoArr(LBound(selectionInfoArr) To UBound(selectionInfoArr) + 1)
+    infoArr(1) = Join(titleInfoArr, " ")
+
+    ' 将选定行加入到 infoArr
+    Dim i As Integer
+    For i = LBound(selectionInfoArr) To UBound(selectionInfoArr)
+        infoArr(i + 1) = selectionInfoArr(i)
     Next i
-    Debug.Print titleStr
+
+    ' 打印 infoArr 的内容
+    For i = LBound(infoArr) To UBound(infoArr)
+        Debug.Print infoArr(i)
+    Next i
 End Sub
+
